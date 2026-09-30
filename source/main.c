@@ -22,11 +22,10 @@
  *  怎么运行
  *  ---------------------------------------------------------------------------
  *   · 模拟器：用 Azahar（Citra 的继任者）直接打开 .3dsx 文件
- *   · 真机  ：拷到 SD 卡的 /3ds/ 目录，用 Homebrew Launcher 启动
+ *   · 真机  ：拷到 SD 卡的 /3ds/ 目录，用设备上的启动器打开
  *
- *  真机上要让背景音乐出声，还需要 DSP 固件放在 sdmc:/3ds/dspfirm.cdc。
- *  这个文件必须从你自己的 3DS 里导出（Luma3DS → Rosalina 菜单 →
- *  Miscellaneous options → Dump DSP firmware），不能随程序分发。
+ *  背景音乐需要 DSP 固件文件 sdmc:/3ds/dspfirm.cdc。
+ *  该文件按许可不可随项目分发，需要使用者自行准备。
  *  没有它程序照样跑，只是没有声音。
  *
  *  ---------------------------------------------------------------------------
@@ -609,12 +608,9 @@ int main(int argc, char **argv)
 	/* ---------------------------------------------------------------------
 	 *  6.2  初始化音频
 	 * ---------------------------------------------------------------------
-	 *  ndspInit() 在真机上需要 DSP 固件文件 sdmc:/3ds/dspfirm.cdc。
-	 *  没有它就会失败。失败不代表程序不能用 —— 只是没声音，
-	 *  所以这里不退出，而是把原因记下来显示在屏幕上。
-	 *
-	 *  在模拟器（Azahar/Citra）里，放一个 0 字节的空文件就能过这一步，
-	 *  因为模拟器是软件模拟 DSP，读不到内容也不影响。 */
+	 *  ndspInit() 需要 DSP 固件文件 sdmc:/3ds/dspfirm.cdc，该文件按许可不可随项目
+	 *  分发，需要使用者自行准备。没有它就会失败 —— 但失败不代表程序不能用，
+	 *  只是没声音，所以这里不退出，而是把原因记下来显示在屏幕上。 */
 	Result ndspRes = ndspInit();
 	bool ndspOk = R_SUCCEEDED(ndspRes);
 	if (ndspOk)
@@ -655,7 +651,7 @@ int main(int argc, char **argv)
 		touchPosition tp;
 		hidTouchRead(&tp);
 
-		/* START 键退出，回到 Homebrew Launcher */
+		/* START 键退出 */
 		if (kDown & KEY_START) break;
 
 		/* --- 处理触摸按钮 ---

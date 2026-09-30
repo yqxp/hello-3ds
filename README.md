@@ -1,8 +1,9 @@
 # hello-3ds
 
-A small but complete Nintendo 3DS homebrew example, written to be **read** as much as run.
-Every non-obvious line is commented, and the tricky parts (asset pipelines, the NDSP audio
-thread) are explained in place rather than left as magic.
+A small Nintendo 3DS homebrew example. Every non-obvious line is commented, and the tricky
+parts (asset pipelines, the NDSP audio thread) are explained in place rather than left as magic.
+
+Built with assistance from Pi Agent + DeepSeek V4 flash.
 
 ![screenshot](docs/screenshot.png)
 
@@ -32,7 +33,7 @@ small and separate.
 * [devkitPro](https://devkitpro.org/wiki/Getting_Started) with the `3ds-dev` package group
   (provides `devkitARM`, `libctru`, `citro3d`, `citro2d`, `tex3ds`, `mkbcfnt`, …).
 * An emulator (**[Azahar](https://azahar-emu.org/)** — the maintained successor to Citra) or a
-  real 3DS with Luma3DS installed.
+  real 3DS.
 
 Verify your toolchain with:
 
@@ -56,30 +57,11 @@ The output name follows the folder name, so keep the folder named `hello-3ds`.
 
 ## Run
 
-### Emulator
-
-Open `hello-3ds.3dsx` directly (File → Load File) in Azahar.
-
-The emulator is a software emulation of the DSP, but `libctru` still insists on finding a DSP
-firmware blob. Put an **empty file** at `<Azahar data dir>/sdmc/3ds/dspfirm.cdc`, e.g.:
-
-```
-C:\Users\<you>\AppData\Roaming\Azahar\sdmc\3ds\dspfirm.cdc
-```
-
-(zero bytes is enough — the emulator does not read its contents, it only needs the file to exist).
-
-### Real hardware
-
-1. Copy `hello-3ds.3dsx` to `SD:/3ds/`.
-2. Launch it from the **Homebrew Launcher**.
-3. For audio you need a real DSP firmware dump at `SD:/3ds/dspfirm.cdc`:
-   open the **Rosalina menu** (L + Down + Select) → *Miscellaneous options…* →
-   *Dump DSP firmware*.
-
-Without that file the app still runs — it just shows `Audio unavailable: …` and stays silent.
-
-> `dspfirm.cdc` is Nintendo firmware and **must not be redistributed**. Never commit it.
+- **Emulator** — open `hello-3ds.3dsx` in [Azahar](https://azahar-emu.org/) (File → Load File).
+- **Hardware** — copy it to `SD:/3ds/` and open it with the homebrew launcher on the device.
+- **Audio** — playback needs a DSP firmware file at `sdmc:/3ds/dspfirm.cdc`. Each user supplies
+  their own; it is not distributed with this project and must never be committed. Without it the
+  app still runs, it just shows `Audio unavailable: …` and stays silent.
 
 ---
 
@@ -197,56 +179,6 @@ Keep it small — it is embedded into the `.3dsx`, and the whole file is read in
 
 ---
 
-## A war story: the audio that played at exactly half speed
-
-This cost me an entire evening, so it is written down here.
-
-**Symptom.** Background music stuttered. Not crackling — *gaps*, as if every other chunk of
-audio had been removed. Everything else looked perfect: the emulator ran at 100% speed, decoding
-a 120 ms buffer took 9 ms, and the wave-buffer queue never ran dry.
-
-**Measurement.** The app printed two numbers: wall-clock time since playback started, and the
-duration of audio actually decoded. They diverged, in a very specific way:
-
-```
-running 00:26   decoded 00:13      ->  exactly 0.50x, every time
-```
-
-Not a slow decoder. A decoder that was being *consumed* at half rate.
-
-**Cause.** `ndspWaveBuf.nsamples` is the number of **frames** (samples *per channel*), not the
-total number of `int16` values in the buffer. I had been passing `frames * channels`, i.e. twice
-the correct value, so the DSP believed every buffer held twice as much audio as it did — and
-played each one at half speed.
-
-The libctru header documents it misleadingly:
-
-```c
-u32 nsamples;   ///< Total number of samples (PCM8=bytes, PCM16=halfwords, ...)
-```
-
-…and devkitPro's own examples contradict each other:
-
-| Example | What it assigns | Correct? |
-|---|---|---|
-| `audio/streaming` | frame count | ✅ |
-| `audio/ogg-vorbis` | total `int16` count | ❌ |
-
-I had copied the second one. The fix is one division:
-
-```c
-wb->nsamples = total / (size_t)s_channels;
-```
-
-**How to spot it again:** if decoding is fast and the queue never starves, but *decoded duration
-÷ elapsed time* is a constant 0.5, this is your bug.
-
-**Diagnosis tip that saved me:** when a symptom is ambiguous, build a *control*. I ran
-`3ds-examples/audio/streaming` — devkitPro's own code, a plain sine wave, no MP3, no minimp3 —
-in the same emulator. It was perfectly smooth. That single test moved the blame from the emulator
-to my code, which is where it belonged.
-
----
 
 ## Device notes
 

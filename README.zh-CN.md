@@ -1,7 +1,8 @@
 # hello-3ds（中文说明）
 
-一个**为「读」而写**的 Nintendo 3DS homebrew 入门示例。代码里的每一处不直观的地方都有注释，
-资源怎么生成、音频线程怎么跑，全部写在现场，不留魔法。
+一个 Nintendo 3DS homebrew 入门示例。代码里不直观的地方都有注释。
+
+> 本示例由 Pi Agent + DeepSeek V4 flash 协助编写。
 
 ![截图](docs/screenshot.png)
 
@@ -28,7 +29,6 @@
 
 * [devkitPro](https://devkitpro.org/wiki/Getting_Started)，安装 `3ds-dev` 这一组
   （里面就有 `devkitARM`、`libctru`、`citro3d`、`citro2d`、`tex3ds`、`mkbcfnt`）。
-* 模拟器用 **[Azahar](https://azahar-emu.org/)**（Citra 的继任者），或者装了 Luma3DS 的真机。
 
 装好后自检：
 
@@ -50,34 +50,6 @@ make clean
 
 ---
 
-## 运行
-
-### 模拟器
-
-用 Azahar 直接打开 `hello-3ds.3dsx`。
-
-模拟器是软件模拟 DSP 的，但 `libctru` 仍然要找到一个 DSP 固件文件才肯初始化。
-放一个**空文件**在 Azahar 数据目录下的 `sdmc/3ds/dspfirm.cdc` 即可，例如：
-
-```
-C:\Users\<你的用户名>\AppData\Roaming\Azahar\sdmc\3ds\dspfirm.cdc
-```
-
-**0 字节就够** —— 模拟器不读它的内容，只要文件存在。
-
-### 真机
-
-1. 把 `hello-3ds.3dsx` 拷到 SD 卡的 `/3ds/` 目录。
-2. 从 **Homebrew Launcher** 启动。
-3. 要出声，还需要真正的 DSP 固件：打开 **Rosalina 菜单**（L + 下 + Select）→
-   *Miscellaneous options…* → *Dump DSP firmware*，生成 `SD:/3ds/dspfirm.cdc`。
-
-没有这个文件程序照样能跑，只是显示 `Audio unavailable: …` 并且没有声音。
-
-> `dspfirm.cdc` 是任天堂的固件，**绝对不能随项目分发**，也不要提交进仓库。
-
----
-
 ## 目录结构
 
 ```
@@ -96,7 +68,7 @@ hello-3ds/
 │   └── music.mp3              背景音乐
 ├── fonts/
 │   ├── LICENSE-OFL.txt
-│   └── NotoSansSC-Regular.otf 源字体（8 MB，已提交）
+│   └── NotoSansSC-Regular.otf 源字体
 └── tools/gen-font.ps1         重新生成字体
 ```
 
@@ -185,52 +157,6 @@ citro2d 画一行字要三步：`C2D_TextFontParse` 把字符登记进文字缓�
 
 ---
 
-## 一个踩了很久的坑：音频以恰好一半的速度播放
-
-**症状**：背景音乐一顿一顿的，不是爆音，是**成片的静音间隙**。
-但其他一切都正常：模拟器 100% 速度，解码一块 120 毫秒的数据只要 9 毫秒，
-缓冲区一次都没被抽干过。
-
-**测量**：程序里打了两个数字——开机到现在的实际时间，和已经解码出来的音频时长。它们稳定发散：
-
-```
-运行 00:26   已解码 00:13       →  恰好 0.50×，每次都是
-```
-
-不是解码慢，是**被消耗的速度只有一半**。
-
-**原因**：`ndspWaveBuf.nsamples` 的单位是**帧数**（每个声道的采样个数），
-不是缓冲区里 `int16` 的总个数。我传了 `帧数 × 声道数`，也就是两倍的值，
-于是 DSP 认为每块数据有双倍时长，按一半速度播。
-
-而 libctru 头文件的注释是有误导性的：
-
-```c
-u32 nsamples;   ///< Total number of samples (PCM8=bytes, PCM16=halfwords, ...)
-```
-
-更坑的是 devkitPro 自己的两个示例写法互相矛盾：
-
-| 示例 | 赋值含义 | 对不对 |
-|---|---|---|
-| `audio/streaming` | 帧数 | ✅ |
-| `audio/ogg-vorbis` | `int16` 总个数 | ❌ |
-
-我抄了第二个。修复只需要一个除法：
-
-```c
-wb->nsamples = total / (size_t)s_channels;
-```
-
-**以后怎么快速识别**：解码很快、缓冲从不空，但「已解码时长 ÷ 运行时长」恒等于 0.5，就是这个坑。
-
-**救了我的诊断方法**：当症状指向不明时，**造一个对照组**。
-我在同一个模拟器里跑了 `3ds-examples/audio/streaming`——
-devkitPro 官方代码、纯正弦波、没有 MP3、没有 minimp3——结果完全平稳。
-这一个测试就把责任从模拟器挪回了我自己的代码，而它确实在那儿。
-
----
-
 ## 硬件备忘
 
 * 两个屏幕：**上屏 400×240**（每眼；开 3D 时面板输出 800×240），**下屏 320×240** 带触摸。
@@ -255,7 +181,7 @@ devkitPro 官方代码、纯正弦波、没有 MP3、没有 minimp3——结果�
 写出 `gfx/whitelist.txt`，然后调用 `mkbcfnt`。
 
 > 选字体时注意授权：系统自带字体（SimHei、微软雅黑等）**不允许再分发**。
-> Noto / 思源系列是 SIL OFL，可以放心用。
+> Noto / 思源系列是 SIL OFL，可以用。
 
 ---
 
@@ -269,5 +195,5 @@ MIT，见 [LICENSE](LICENSE)。
   采用 **SIL OFL 1.1**。OFL **明确允许再分发**（包括字体文件本身），
   条件是许可证必须跟着字体走 —— 所以 `fonts/LICENSE-OFL.txt` 一定要一起提交。
   这份 Noto 的 OFL 没有声明 Reserved Font Name，所以**子集也可以继续叫 Noto**。
-- **音乐**：`romfs/music.mp3` 是原创作品，© 2026 Jason (YQXP)，
+- **音乐**：`romfs/music.mp3` 是原创作品，© 2026 Jason YQXP，
   **不包含在 MIT 授权范围内**。别人 fork 时应该换成自己有权的音频。
