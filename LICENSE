@@ -1,0 +1,41 @@
+MIT License
+
+Copyright (c) 2026 Jason (YQXP)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+Third-party components bundled or required by this project:
+
+* source/minimp3.h — minimp3 by lieff, dedicated to the public domain (CC0).
+  https://github.com/lieff/minimp3
+
+* fonts/NotoSansSC-Regular.otf and romfs/cjk.bcfnt — Noto Sans SC, licensed under
+  the SIL Open Font License 1.1, which permits redistribution provided the license
+  travels with the font (fonts/LICENSE-OFL.txt). The font's OFL declares no
+  Reserved Font Name, so the generated subset may keep the name.
+  https://github.com/notofonts/noto-cjk
+
+* romfs/music.mp3 — an original composition, (c) 2026 Jason (YQXP). It is included
+  here as the demo track and is NOT covered by the MIT license above. If you fork
+  this project, replace it with audio you have the rights to redistribute.
+
+* The DSP firmware file (dspfirm.cdc) is Nintendo proprietary firmware. It is
+  deliberately not included and must never be redistributed with this project.

@@ -1,0 +1,15 @@
+# Build output
+build/
+*.elf
+*.3dsx
+*.smdh
+*.map
+
+# Generated from gfx/*.t3s by tex3ds
+romfs/gfx/
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini

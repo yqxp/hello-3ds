@@ -1,0 +1,18 @@
+# Normalise line endings in the repository and check text files out with LF.
+# This matters: a Makefile with CRLF line endings can fail on Linux/macOS,
+# and the devkitPro toolchain is used on all three platforms.
+* text=auto eol=lf
+
+# Assets that must never be line-ending converted or diffed as text.
+*.png    binary
+*.jpg    binary
+*.mp3    binary
+*.ogg    binary
+*.wav    binary
+*.ttf    binary
+*.otf    binary
+*.bcfnt  binary
+*.t3x    binary
+*.3dsx   binary
+*.smdh   binary
+*.elf    binary
